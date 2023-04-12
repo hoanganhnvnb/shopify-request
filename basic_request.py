@@ -1,6 +1,6 @@
 import requests
 
-from constants import API_PASSWORD, API_KEY
+from day1.constants import API_PASSWORD, API_KEY
 
 headers = {"Accept": "application/json", "Content-Type": "application/json"}
 shop_url = "https://%s:%s@deep-store-0706.myshopify.com/admin" % (API_KEY, API_PASSWORD)
