@@ -31,28 +31,66 @@ def create_product():
     r = requests.post(shop_url + endpoint, json=payload, headers=headers)
     return r
 
-def update_product(product_id):
+def update_price(variant_id):
+    
+    payload = {
+        "variant": {
+            "price": 55000,
+            "compare_at_price": 150000,
+            "inventory_management": "shopify",
+        }
+    }
+    
+    endpoint = "/api/2023-04/variants/" + str(variant_id) + ".json"
+    r = requests.put(shop_url + endpoint, json=payload, headers=headers)
+    return r
+
+def update_quantity(inventory_item_id, qty_available):
+    tracked = {
+        "inventory_item": {
+            "tracked": True
+        }
+    }
+    requests.put(shop_url + "/api/2023-04/inventory_items/" + str(inventory_item_id) + ".json", json=tracked, headers=headers)
+    
+    endpoint_get_level = "/api/2023-04/inventory_levels.json?inventory_item_ids=" + str(inventory_item_id)
+    
+    inventory_level = requests.get(shop_url + endpoint_get_level, headers=headers)
+    print(inventory_level.json()["inventory_levels"][0]["location_id"])
+    print(inventory_item_id)
+    
+    qty = {
+        # "inventory_level": {
+        "inventory_item_id": inventory_item_id,
+        "location_id": inventory_level.json()["inventory_levels"][0]["location_id"],
+        "available": qty_available,
+        # }
+    }
+    
+    endpoint_set_qty = "/api/2023-04/inventory_levels/set.json"
+    
+    r = requests.post(shop_url + endpoint_set_qty, json=qty, headers=headers)
+    print(r.json())
+    return r
+    
+    
+
+def update_product(product):
+    create_product_image(product.json()["product"]["id"], [])
+    
+    for variant in product.json()["product"]["variants"]:
+        update_price(variant["id"])
+        update_quantity(variant["inventory_item_id"], 10)
+        
+def add_option(product_id):
     payload = {
         "product": {
-            "title": "Product From API" + str(product_id),
             "variants": [             
                 {
-                    "inventory_quantity": 10,
-                    "old_inventory_quantity": 10,
-                    "weight": 4.3,
-                    "price": 65000,
-                    "compare_at_price": 160000,
-                    "sku": "TEST2023",
                     "option1": "White",
                     "option2": "Medium"
                 }, 
                 {
-                    "inventory_quantity": 10,
-                    "old_inventory_quantity": 10,
-                    "weight": 2.3,
-                    "price": 55000,
-                    "compare_at_price": 150000,
-                    "sku": "TEST2023",
                     "option1": "White",
                     "option2": "Small"
                 }
@@ -82,27 +120,11 @@ def update_product(product_id):
     r = requests.put(shop_url + endpoint, json=payload, headers=headers)
     return r
 
+
 def delete_product(product_id):
     endpoint = "/api/2023-04/products/" + str(product_id) + ".json"
     
     r = requests.delete(shop_url + endpoint, headers=headers)
-    
-def update_variant(variant_id):
-    
-    payload = {
-        "variant": {
-            "inventory_quantity": 10,
-            "old_inventory_quantity": 10,
-            "weight": 2.3,
-            "price": 55000,
-            "compare_at_price": 150000,
-            "sku": "TEST2023",
-            "inventory_management": "shopify",
-        }
-    }
-    
-    endpoint = "/api/2023-04/variants/" + str(variant_id) + ".json"
-    r = requests.put(shop_url + endpoint, json=payload, headers=headers)
     
 def create_custom_collection():
     
@@ -224,17 +246,17 @@ def create_order(customer_email):
 
 if __name__ == '__main__':
     
-    # product1 = create_product()
-    # product1 = update_product(product1.json()["product"]["id"])
-    # create_product_image(product1.json()["product"]["id"], [])
+    product1 = create_product()
+    product1 = add_option(product1.json()["product"]["id"])
+    product1 = update_product(product1)
     
-    # product2 = create_product()
-    # product2 = update_product(product2.json()["product"]["id"])
-    # create_product_image(product2.json()["product"]["id"], [])
+    
+    product2 = create_product()
+    product2 = update_product(product2)
     
     # delete_product(product1.json()["product"]["id"])
     # delete_product(product2.json()["product"]["id"])
 
     # create_smart_collection()
     # customer = create_customer()
-    create_order("test.lastnameson@example.com")
+    # create_order("test.lastnameson@example.com")
